@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investment Behavior — Statement of Findings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.32.0/plotly.min.js"></script>
+<style>
+:root{
+  --ink:#0B1F3A;
+  --ink-soft:#16294a;
+  --paper:#F7F5F0;
+  --paper-raised:#FCFBF8;
+  --gold:#C9A23E;
+  --gold-soft:#e3cd92;
+  --teal:#2F6F5E;
+  --brick:#8B3A3A;
+  --body:#5B5347;
+  --hairline:rgba(11,31,58,0.14);
+  --hairline-gold:rgba(201,162,62,0.45);
+  --font-display:'Fraunces', serif;
+  --font-body:'IBM Plex Sans', sans-serif;
+  --font-mono:'IBM Plex Mono', monospace;
+  --sidebar-w:248px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  color:var(--body);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+::selection{ background:var(--gold-soft); color:var(--ink); }
+a{ color:var(--teal); }
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  background-image:
+    radial-gradient(ellipse at top left, rgba(11,31,58,0.025), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(201,162,62,0.04), transparent 55%);
+  pointer-events:none;
+  z-index:0;
+}
+.shell{
+  display:flex;
+  min-height:100vh;
+  position:relative;
+  z-index:1;
+}
+.sidebar{
+  width:var(--sidebar-w);
+  flex:0 0 var(--sidebar-w);
+  background:var(--ink);
+  color:var(--paper);
+  position:fixed;
+  top:0; left:0; bottom:0;
+  display:flex;
+  flex-direction:column;
+  z-index:10;
+  border-right:1px solid var(--hairline-gold);
+}
+.brand{
+  padding:32px 28px 22px;
+  border-bottom:1px solid rgba(247,245,240,0.12);
+}
+.brand .mark{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.18em;
+  color:var(--gold);
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.brand h1{
+  font-family:var(--font-display);
+  font-weight:500;
+  font-size:21px;
+  line-height:1.25;
+  margin:0;
+  color:var(--paper);
+}
+.brand .sub{
+  font-size:11.5px;
+  color:rgba(247,245,240,0.55);
+  margin-top:8px;
+  font-style:italic;
+  font-family:var(--font-display);
+}
+nav.ledger-nav{
+  flex:1;
+  padding:18px 0;
+}
+.ledger-nav .entry{
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+  width:100%;
+  padding:14px 28px;
+  background:none;
+  border:none;
+  color:rgba(247,245,240,0.62);
+  font-family:var(--font-body);
+  font-size:14.5px;
+  text-align:left;
+  cursor:pointer;
+  position:relative;
+  transition:color .18s ease, background .18s ease;
+}
+.ledger-nav .entry .no{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--gold-soft);
+  opacity:0.55;
+  min-width:18px;
+}
+.ledger-nav .entry:hover{
+  color:var(--paper);
+  background:rgba(247,245,240,0.04);
+}
+.ledger-nav .entry.active{
+  color:var(--paper);
+  background:rgba(201,162,62,0.10);
+}
+.ledger-nav .entry.active::before{
+  content:"";
+  position:absolute; left:0; top:8px; bottom:8px; width:3px;
+  background:var(--gold);
+}
+.ledger-nav .entry.active .no{ opacity:1; }
+.sidebar-foot{
+  padding:20px 28px 26px;
+  border-top:1px solid rgba(247,245,240,0.12);
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  color:rgba(247,245,240,0.4);
+  letter-spacing:0.04em;
+  line-height:1.6;
+}
+main{
+  flex:1;
+  margin-left:var(--sidebar-w);
+  padding:44px 56px 80px;
+  max-width:1280px;
+}
+.page{ display:none; animation:fadeIn .35s ease; }
+.page.active{ display:block; }
+@keyframes fadeIn{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+.page-head{
+  margin-bottom:36px;
+  padding-bottom:22px;
+  border-bottom:1px solid var(--hairline);
+}
+.page-head .eyebrow{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.16em;
+  text-transform:uppercase;
+  color:var(--teal);
+  margin-bottom:10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.page-head .eyebrow .rule{ flex:0 0 28px; height:1px; background:var(--teal); opacity:0.5; }
+.page-head h2{
+  font-family:var(--font-display);
+  font-weight:500;
+  font-size:34px;
+  color:var(--ink);
+  margin:0 0 8px;
+}
+.page-head p.desc{
+  font-size:15px;
+  color:var(--body);
+  max-width:640px;
+  margin:0;
+  line-height:1.6;
+}
+.statement{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:0;
+  border-top:1px solid var(--hairline-gold);
+  border-bottom:1px solid var(--hairline-gold);
+  margin-bottom:48px;
+}
+.line-item{
+  padding:22px 26px;
+  border-right:1px solid var(--hairline);
+  position:relative;
+}
+.line-item:last-child{ border-right:none; }
+.line-item .label{
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--body);
+  opacity:0.75;
+  margin-bottom:10px;
+}
+.line-item .value{
+  font-family:var(--font-mono);
+  font-size:34px;
+  font-weight:500;
+  color:var(--ink);
+  font-feature-settings:"tnum";
+  font-variant-numeric:tabular-nums;
+  line-height:1;
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+}
+.line-item .value .unit{
+  font-size:15px;
+  color:var(--gold);
+  font-weight:600;
+}
+.line-item .underline{
+  margin-top:12px;
+  height:2px;
+  width:38px;
+  background:var(--gold);
+}
+.line-item .note{
+  font-size:11.5px;
+  color:var(--body);
+  opacity:0.65;
+  margin-top:8px;
+  font-style:italic;
+  font-family:var(--font-display);
+}
+.section-label{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  color:var(--ink);
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin:0 0 18px;
+}
+.section-label::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:var(--hairline-gold);
+}
+.grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:32px;
+  margin-bottom:48px;
+}
+.grid-1{ margin-bottom:48px; }
+.panel{
+  background:var(--paper-raised);
+  border:1px solid var(--hairline);
+  padding:24px 24px 12px;
+  position:relative;
+}
+.panel::before{
+  content:"";
+  position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg, var(--gold) 0%, transparent 100%);
+}
+.panel h3{
+  font-family:var(--font-display);
+  font-weight:500;
+  font-size:17px;
+  color:var(--ink);
+  margin:0 0 4px;
+}
+.panel .panel-sub{
+  font-size:12.5px;
+  color:var(--body);
+  opacity:0.75;
+  margin-bottom:10px;
+}
+.chart-box{ width:100%; min-height:300px; }
+.chart-box.tall{ min-height:380px; }
+.chart-box.short{ min-height:230px; }
+.ledger-table{
+  width:100%;
+  border-collapse:collapse;
+  font-family:var(--font-mono);
+  font-size:13px;
+}
+.ledger-table th{
+  text-align:left;
+  font-family:var(--font-body);
+  font-weight:600;
+  font-size:11px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  color:var(--body);
+  padding:10px 14px;
+  border-bottom:1px solid var(--hairline-gold);
+}
+.ledger-table td{
+  padding:13px 14px;
+  border-bottom:1px solid var(--hairline);
+  color:var(--ink);
+  font-variant-numeric:tabular-nums;
+}
+.ledger-table td:first-child{ font-family:var(--font-body); font-weight:500; color:var(--ink-soft); }
+.ledger-table tr:last-child td{ border-bottom:none; }
+.ledger-table tbody tr:hover{ background:rgba(201,162,62,0.06); }
+.callout{
+  border-left:3px solid var(--gold);
+  padding:16px 20px;
+  background:rgba(201,162,62,0.06);
+  font-size:13.5px;
+  line-height:1.65;
+  color:var(--ink-soft);
+  margin-top:18px;
+}
+.callout b{ color:var(--ink); }
+footer.page-foot{
+  margin-top:60px;
+  padding-top:22px;
+  border-top:1px solid var(--hairline);
+  font-family:var(--font-mono);
+  font-size:10.5px;
+  color:var(--body);
+  opacity:0.6;
+  letter-spacing:0.04em;
+  display:flex;
+  justify-content:space-between;
+}
+@media (max-width: 980px){
+  .grid-2{ grid-template-columns:1fr; }
+  .statement{ grid-template-columns:repeat(2,1fr); }
+  .line-item:nth-child(2){ border-right:none; }
+}
+@media (max-width: 760px){
+  .sidebar{ width:72px; flex:0 0 72px; }
+  main{ margin-left:72px; padding:28px 20px 60px; }
+  .brand h1, .brand .sub, .entry span.label-text{ display:none; }
+  .brand{ padding:24px 14px 16px; }
+  .ledger-nav .entry{ padding:14px; justify-content:center; }
+  .statement{ grid-template-columns:1fr 1fr; }
+  .page-head h2{ font-size:26px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .page{ animation:none; }
+}
+button:focus-visible, .entry:focus-visible{
+  outline:2px solid var(--gold);
+  outline-offset:2px;
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">Statement of Findings</div>
+      <h1>Investment Behavior &amp; Sentiment</h1>
+      <div class="sub">A reading of 40 respondents</div>
+    </div>
+    <nav class="ledger-nav" id="nav">
+      <button class="entry active" data-page="overview"><span class="no">01</span><span class="label-text">Overview</span></button>
+      <button class="entry" data-page="reasons"><span class="no">02</span><span class="label-text">Investment Reasons</span></button>
+      <button class="entry" data-page="duration"><span class="no">03</span><span class="label-text">Duration &amp; Correlation</span></button>
+    </nav>
+    <div class="sidebar-foot">
+      DATA SET — 40 RESPONDENTS<br>
+      SOURCE — SURVEY INSTRUMENT
+    </div>
+  </aside>
+  <main>
+    <section class="page active" id="page-overview">
+      <div class="page-head">
+        <div class="eyebrow"><span class="rule"></span> Page 01 — Ledger Summary</div>
+        <h2>Overview</h2>
+        <p class="desc">A first reading of who responded, what they chose, and how the numbers settle across the book.</p>
+      </div>
+      <div class="statement" id="kpi-row"></div>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Gender Distribution</h3>
+          <div class="panel-sub">Share of respondents by gender</div>
+          <div class="chart-box" id="chart-gender"></div>
+        </div>
+        <div class="panel">
+          <h3>Most Preferred Investment Avenue</h3>
+          <div class="panel-sub">Frequency of avenue selected as primary</div>
+          <div class="chart-box" id="chart-avenue"></div>
+        </div>
+      </div>
+      <div class="section-label">Descriptive Statistics</div>
+      <div class="panel" style="margin-bottom:48px;">
+        <h3>Mean, Median &amp; Standard Deviation</h3>
+        <div class="panel-sub">Across the three numeric fields derived from the survey</div>
+        <table class="ledger-table" id="desc-table">
+          <thead><tr><th>Variable</th><th>Mean</th><th>Median</th><th>Std. Dev.</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <footer class="page-foot">
+        <span>INVESTMENT BEHAVIOR DASHBOARD</span>
+        <span id="foot-count-1"></span>
+      </footer>
+    </section>
+    <section class="page" id="page-reasons">
+      <div class="page-head">
+        <div class="eyebrow"><span class="rule"></span> Page 02 — Instrument by Instrument</div>
+        <h2>Investment Reasons</h2>
+        <p class="desc">Why respondents chose each instrument — the stated reasoning behind equity, bonds, mutual funds, and fixed deposits.</p>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Equity</h3>
+          <div class="panel-sub">Reasons for investing in equity</div>
+          <div class="chart-box short" id="chart-reason-equity"></div>
+        </div>
+        <div class="panel">
+          <h3>Bonds</h3>
+          <div class="panel-sub">Reasons for investing in bonds</div>
+          <div class="chart-box short" id="chart-reason-bonds"></div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Mutual Funds</h3>
+          <div class="panel-sub">Reasons for investing in mutual funds</div>
+          <div class="chart-box short" id="chart-reason-mutual"></div>
+        </div>
+        <div class="panel">
+          <h3>Fixed Deposits</h3>
+          <div class="panel-sub">Reasons for investing in fixed deposits</div>
+          <div class="chart-box short" id="chart-reason-fd"></div>
+        </div>
+      </div>
+      <footer class="page-foot">
+        <span>INVESTMENT BEHAVIOR DASHBOARD</span>
+        <span id="foot-count-2"></span>
+      </footer>
+    </section>
+    <section class="page" id="page-duration">
+      <div class="page-head">
+        <div class="eyebrow"><span class="rule"></span> Page 03 — Time Horizon &amp; Relationships</div>
+        <h2>Duration, Expectations &amp; Correlation</h2>
+        <p class="desc">How long respondents hold their investments, what they expect to earn, and how age relates to time horizon.</p>
+      </div>
+      <div class="statement" id="kpi-row-2"></div>
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Primary Savings Objectives</h3>
+          <div class="panel-sub">What respondents are ultimately saving for</div>
+          <div class="chart-box" id="chart-savings"></div>
+        </div>
+        <div class="panel">
+          <h3>Common Sources of Investment Information</h3>
+          <div class="panel-sub">Where respondents get investment guidance</div>
+          <div class="chart-box" id="chart-source"></div>
+        </div>
+      </div>
+      <div class="grid-1">
+        <div class="panel">
+          <h3>Expected Returns Distribution</h3>
+          <div class="panel-sub">Self-reported return expectations across the book</div>
+          <div class="chart-box short" id="chart-expect"></div>
+        </div>
+      </div>
+      <div class="grid-1">
+        <div class="panel">
+          <h3>Age vs. Duration vs. Expected Return</h3>
+          <div class="panel-sub">Bubble size and color reflect expected return</div>
+          <div class="chart-box tall" id="chart-scatter"></div>
+          <div class="callout" id="corr-callout"></div>
+        </div>
+      </div>
+      <footer class="page-foot">
+        <span>INVESTMENT BEHAVIOR DASHBOARD</span>
+        <span id="foot-count-3"></span>
+      </footer>
+    </section>
+  </main>
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
